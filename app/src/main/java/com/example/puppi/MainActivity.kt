@@ -2,18 +2,22 @@ package com.example.puppi
 
 import android.Manifest
 import android.app.Activity
+import android.app.AlertDialog
 import android.bluetooth.BluetoothAdapter
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.app.AlertDialog
 import android.os.Build
-import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import android.widget.Button
+import android.os.IBinder
+import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
+import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 
 private const val ENABLE_BLUETOOTH_REQUEST_CODE = 1
@@ -23,10 +27,38 @@ private const val LOCATION_PERMISSION_REQUEST_CODE = 2
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        this.supportActionBar?.hide();
         setContentView(R.layout.activity_main)
 
-        val bleButton = findViewById<Button>(R.id.bleButton)
+        /* Intent(this, PuppiBLEService::class.java).also { intent ->
+            startService(intent)
+        }*/
+        requestLocationPermission()
+        promptEnableBluetooth()
+
+        val bleButton = findViewById<FloatingActionButton>(R.id.bleButton)
+
+        bleButton.setOnClickListener {
+            if(serviceBound) {
+                Log.i("ScanButtonStatus", "Scan button pressed")
+                if(!bleService.isConnected){
+                    if(!bleService.isScanning){
+                        Log.i("ScanButtonStatus", "Calling Ble scan")
+                        bleService.startBleScan()
+                    } else {
+                        Log.i("ScanButtonStatus", "Stopping Ble scan")
+                        bleService.stopBleScan()
+                    }
+                } else {
+                    bleService.disconnect()
+                }
+            }
+        }
     }
+
+    private lateinit var bleService: PuppiBLEService
+
+    var serviceBound: Boolean = false
 
     private var bluetoothAdapter: BluetoothAdapter = BluetoothAdapter.getDefaultAdapter()
 
@@ -34,6 +66,21 @@ class MainActivity : AppCompatActivity() {
         super.onResume()
         if(!bluetoothAdapter.isEnabled) {
             promptEnableBluetooth()
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        val intent = Intent(this, PuppiBLEService::class.java)
+        startService(intent)
+        bindService(intent, mServiceConnection, BIND_AUTO_CREATE)
+    }
+
+    override fun onStop() {
+        super.onStop()
+        if (serviceBound) {
+            unbindService(mServiceConnection)
+            serviceBound = false
         }
     }
 
@@ -70,10 +117,11 @@ class MainActivity : AppCompatActivity() {
         runOnUiThread {
             val alert = AlertDialog.Builder(this)
             alert.setTitle("Location permission required")
-            alert.setMessage("Starting from Android M (6.0), the system requires apps to be granted " +
-                    "location access in order to scan for BLE devices.")
-            alert.setPositiveButton(android.R.string.ok) {
-                _, _ ->
+            alert.setMessage(
+                    "Starting from Android M (6.0), the system requires apps to be granted " +
+                            "location access in order to scan for BLE devices."
+            )
+            alert.setPositiveButton(android.R.string.ok) { _, _ ->
                 requestPermission(
                         Manifest.permission.ACCESS_FINE_LOCATION,
                         LOCATION_PERMISSION_REQUEST_CODE
@@ -99,6 +147,20 @@ class MainActivity : AppCompatActivity() {
                     requestLocationPermission()
                 }
             }
+        }
+    }
+
+    private val mServiceConnection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceDisconnected(name: ComponentName) {
+            Log.i("BleBinderStatus", "Ble service unbound")
+            serviceBound = false
+        }
+
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val myBinder: PuppiBLEService.LocalBinder = service as PuppiBLEService.LocalBinder
+            bleService = myBinder.service
+            Log.i("BleBinderStatus", "Ble service bound")
+            serviceBound = true
         }
     }
 }

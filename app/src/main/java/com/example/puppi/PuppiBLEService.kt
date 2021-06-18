@@ -14,14 +14,20 @@ import android.os.*
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
+import java.util.*
 
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 class PuppiBLEService : Service() {
 
+    private val BATTERY_SERVICE = UUID.fromString("0000180f-0000-1000-8000-00805f9b34fb")
+    private val BATTERY_CHAR = UUID.fromString("00002a19-0000-1000-8000-00805f9b34fb")
+
     private val bleScanner by lazy {
         bluetoothAdapter.bluetoothLeScanner
     }
+
+    var isConnected: Boolean = false
 
     private val bluetoothAdapter: BluetoothAdapter by lazy {
         val bluetoothManager = getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
@@ -33,7 +39,7 @@ class PuppiBLEService : Service() {
         .setScanMode(ScanSettings.SCAN_MODE_LOW_LATENCY)
         .build()
 
-    private var isScanning = false
+    var isScanning = false
 
     private val scanResults = mutableListOf<ScanResult>()
 
@@ -52,18 +58,21 @@ class PuppiBLEService : Service() {
                 PackageManager.PERMISSION_GRANTED
     }
 
-    private fun startBleScan() {
+    fun startBleScan() {
+        Log.i("BleServiceScan", "Ble scan called")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !isLocationPermissionGranted) {
+            Log.i("BleServiceScan", "Ble scan start unsuccessful, isLocationPermissionGranted: $isLocationPermissionGranted")
             return
         }
         else {
+            Log.i("BleServiceScan", "Ble scan started")
             scanResults.clear()
             bleScanner.startScan(List(1) { filter }, scanSettings, scanCallback)
             isScanning = true
         }
     }
 
-    private fun stopBleScan() {
+    fun stopBleScan() {
         bleScanner.stopScan(scanCallback)
         isScanning = false
     }
@@ -92,6 +101,10 @@ class PuppiBLEService : Service() {
         }
     }
 
+    fun disconnect(){
+        bluetoothGatt?.disconnect()
+    }
+
     private val gattCallback = object: BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
             super.onConnectionStateChange(gatt, status, newState)
@@ -100,10 +113,12 @@ class PuppiBLEService : Service() {
             if(status == BluetoothGatt.GATT_SUCCESS){
                 if (newState == BluetoothProfile.STATE_CONNECTED) {
                     Log.w("BluetoothGattCallback", "Successfully connected to $deviceAddress")
+                    isConnected = true
                     bluetoothGatt = gatt
                     Handler(Looper.getMainLooper()).post {
                         bluetoothGatt?.discoverServices()
                     }
+                    setNotify()
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     Log.w("BluetoothGattCallback", "Successfully disconnected from $deviceAddress")
                     gatt?.close()
@@ -115,11 +130,53 @@ class PuppiBLEService : Service() {
                 )
                 gatt?.close()
             }
+
+
+        }
+
+        override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
+            with(gatt) {
+                Log.w("BluetoothGattCallback", "Discovered ${services.size} services for ${device.address}")
+                printGattTable()
+            }
+        }
+
+        override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
+            with(characteristic) {
+                val byteArray = value
+                Log.i("BluetoothGattCallback", "Read characteristic $uuid:\n${value.toHexString()}")
+                var result = byteArray.first().toInt()
+            }
         }
     }
 
+    fun ByteArray.toHexString(): String =
+            joinToString(separator = " ", prefix = "0x") { String.format("%02X", it) }
+
+    private fun BluetoothGatt.printGattTable() {
+        if (services.isEmpty()) {
+            Log.i("printGattTable", "No service and characteristic available, call discoverServices() first?")
+            return
+        }
+        services.forEach { service ->
+            val characteristicsTable = service.characteristics.joinToString(
+                    separator = "\n|--",
+                    prefix = "|--"
+            ) { it.uuid.toString() }
+            Log.i("printGattTable", "\nService ${service.uuid}\nCharacteristics:\n$characteristicsTable"
+            )
+        }
+    }
+
+    private fun setNotify() {
+        val characteristic: BluetoothGattCharacteristic = bluetoothGatt?.getService(BATTERY_SERVICE)!!.getCharacteristic(BATTERY_CHAR)
+        bluetoothGatt?.setCharacteristicNotification(characteristic, true )
+    }
+
+
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
-        startBleScan()
+        Log.i("BLEService", "BLE service started")
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -138,6 +195,10 @@ class PuppiBLEService : Service() {
         super.onDestroy()
         if(isScanning){
             stopBleScan()
+        }
+
+        if(isConnected){
+            disconnect()
         }
     }
 }
