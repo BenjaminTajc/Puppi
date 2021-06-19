@@ -14,9 +14,13 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.Puppi">
         <service
-            android:name=".PuppiBLEService"
+            android:name=".PuppiDBService"
             android:enabled="true"
             android:exported="true"></service>
+        <service
+            android:name=".PuppiBLEService"
+            android:enabled="true"
+            android:exported="false" />
 
         <activity
             android:name=".HistoryActivity"

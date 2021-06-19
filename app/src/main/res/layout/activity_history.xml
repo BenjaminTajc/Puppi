@@ -17,7 +17,8 @@
             android:layout_height="?attr/actionBarSize"
             android:background="?attr/colorPrimary"
             app:popupTheme="@style/Theme.Puppi.PopupOverlay"
-            app:title="History" />
+            app:title="History"
+            app:titleTextColor="@color/teal_700" />
 
     </com.google.android.material.appbar.AppBarLayout>
 

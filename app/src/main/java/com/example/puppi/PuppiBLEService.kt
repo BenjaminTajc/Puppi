@@ -75,6 +75,7 @@ class PuppiBLEService : Service() {
     fun stopBleScan() {
         bleScanner.stopScan(scanCallback)
         isScanning = false
+        Log.i("BleServiceScan", "Ble scan stopped")
     }
 
     private val scanCallback = object : ScanCallback() {

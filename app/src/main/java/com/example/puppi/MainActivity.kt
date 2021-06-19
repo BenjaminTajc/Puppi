@@ -30,9 +30,9 @@ class MainActivity : AppCompatActivity() {
         this.supportActionBar?.hide();
         setContentView(R.layout.activity_main)
 
-        /* Intent(this, PuppiBLEService::class.java).also { intent ->
+        Intent(this, PuppiBLEService::class.java).also { intent ->
             startService(intent)
-        }*/
+        }
         requestLocationPermission()
         promptEnableBluetooth()
 
@@ -54,6 +54,13 @@ class MainActivity : AppCompatActivity() {
                 }
             }
         }
+
+        val historyButton = findViewById<FloatingActionButton>(R.id.historyButton)
+
+        historyButton.setOnClickListener {
+            val intent = Intent(this, HistoryActivity::class.java)
+            startActivity(intent)
+        }
     }
 
     private lateinit var bleService: PuppiBLEService
@@ -72,7 +79,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStart() {
         super.onStart()
         val intent = Intent(this, PuppiBLEService::class.java)
-        startService(intent)
+        //startService(intent)
         bindService(intent, mServiceConnection, BIND_AUTO_CREATE)
     }
 
