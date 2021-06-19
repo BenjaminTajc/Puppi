@@ -51,6 +51,18 @@ class PuppiBLEService : Service() {
 
     var dbServiceBound: Boolean = false
 
+    var activityBound: Boolean = false
+
+    private var liveCallback: LiveCallBack? = null
+
+    interface LiveCallBack {
+        fun getResult(result: Int)
+    }
+
+    fun registerCallBack(callBack: LiveCallBack?) {
+        liveCallback = callBack
+    }
+
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     val filter: ScanFilter = ScanFilter.Builder().setDeviceName(
         "PuppiListenerInterface"
@@ -67,7 +79,10 @@ class PuppiBLEService : Service() {
     fun startBleScan() {
         Log.i("BleServiceScan", "Ble scan called")
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !isLocationPermissionGranted) {
-            Log.i("BleServiceScan", "Ble scan start unsuccessful, isLocationPermissionGranted: $isLocationPermissionGranted")
+            Log.i(
+                "BleServiceScan",
+                "Ble scan start unsuccessful, isLocationPermissionGranted: $isLocationPermissionGranted"
+            )
             return
         }
         else {
@@ -143,17 +158,26 @@ class PuppiBLEService : Service() {
 
         override fun onServicesDiscovered(gatt: BluetoothGatt, status: Int) {
             with(gatt) {
-                Log.w("BluetoothGattCallback", "Discovered ${services.size} services for ${device.address}")
+                Log.w(
+                    "BluetoothGattCallback",
+                    "Discovered ${services.size} services for ${device.address}"
+                )
                 printGattTable()
             }
         }
 
         @RequiresApi(Build.VERSION_CODES.O)
-        override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
+        override fun onCharacteristicChanged(
+            gatt: BluetoothGatt,
+            characteristic: BluetoothGattCharacteristic
+        ) {
             with(characteristic) {
                 val byteArray = value
                 Log.i("BluetoothGattCallback", "Read characteristic $uuid:\n${value.toHexString()}")
                 val result = byteArray.first().toInt()
+                if(activityBound){
+                    liveCallback?.getResult(result)
+                }
                 if(dbServiceBound){
                     dbService.saveEvent(result)
                 }
@@ -166,22 +190,29 @@ class PuppiBLEService : Service() {
 
     private fun BluetoothGatt.printGattTable() {
         if (services.isEmpty()) {
-            Log.i("printGattTable", "No service and characteristic available, call discoverServices() first?")
+            Log.i(
+                "printGattTable",
+                "No service and characteristic available, call discoverServices() first?"
+            )
             return
         }
         services.forEach { service ->
             val characteristicsTable = service.characteristics.joinToString(
-                    separator = "\n|--",
-                    prefix = "|--"
+                separator = "\n|--",
+                prefix = "|--"
             ) { it.uuid.toString() }
-            Log.i("printGattTable", "\nService ${service.uuid}\nCharacteristics:\n$characteristicsTable"
+            Log.i(
+                "printGattTable",
+                "\nService ${service.uuid}\nCharacteristics:\n$characteristicsTable"
             )
         }
     }
 
     private fun setNotify() {
-        val characteristic: BluetoothGattCharacteristic = bluetoothGatt?.getService(BATTERY_SERVICE)!!.getCharacteristic(BATTERY_CHAR)
-        bluetoothGatt?.setCharacteristicNotification(characteristic, true )
+        val characteristic: BluetoothGattCharacteristic = bluetoothGatt?.getService(BATTERY_SERVICE)!!.getCharacteristic(
+            BATTERY_CHAR
+        )
+        bluetoothGatt?.setCharacteristicNotification(characteristic, true)
     }
 
 
@@ -201,7 +232,13 @@ class PuppiBLEService : Service() {
     private val mBinder: IBinder = LocalBinder()
 
     override fun onBind(intent: Intent): IBinder {
+        activityBound = true
         return mBinder
+    }
+
+    override fun onUnbind(intent: Intent?): Boolean {
+        activityBound = false
+        return super.onUnbind(intent)
     }
 
     override fun onDestroy() {

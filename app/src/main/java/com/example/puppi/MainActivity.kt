@@ -1,5 +1,7 @@
 package com.example.puppi
 
+
+//import android.animation.Animator
 import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
@@ -13,18 +15,13 @@ import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import android.view.animation.AnimationUtils
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
-
-//import android.animation.Animator
-import android.os.Handler
-import android.view.View
-import android.view.animation.Animation
-import android.view.animation.AnimationUtils
 //mrbit?
 //import kotlinx.android.synthetic.main.activity_main.*
 
@@ -34,7 +31,7 @@ private const val ENABLE_BLUETOOTH_REQUEST_CODE = 1
 private const val LOCATION_PERMISSION_REQUEST_CODE = 2
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
-class MainActivity : AppCompatActivity() {
+class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         this.supportActionBar?.hide()
@@ -106,6 +103,7 @@ class MainActivity : AppCompatActivity() {
     override fun onStop() {
         super.onStop()
         if (serviceBound) {
+            bleService.registerCallBack(null)
             unbindService(mServiceConnection)
             serviceBound = false
         }
@@ -145,13 +143,13 @@ class MainActivity : AppCompatActivity() {
             val alert = AlertDialog.Builder(this)
             alert.setTitle("Location permission required")
             alert.setMessage(
-                    "Starting from Android M (6.0), the system requires apps to be granted " +
-                            "location access in order to scan for BLE devices."
+                "Starting from Android M (6.0), the system requires apps to be granted " +
+                        "location access in order to scan for BLE devices."
             )
             alert.setPositiveButton(android.R.string.ok) { _, _ ->
                 requestPermission(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        LOCATION_PERMISSION_REQUEST_CODE
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    LOCATION_PERMISSION_REQUEST_CODE
                 )
             }
             alert.show()
@@ -163,9 +161,9 @@ class MainActivity : AppCompatActivity() {
     }
 
     override fun onRequestPermissionsResult(
-            requestCode: Int,
-            permissions: Array<out String>,
-            grantResults: IntArray
+        requestCode: Int,
+        permissions: Array<out String>,
+        grantResults: IntArray
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         when (requestCode) {
@@ -187,7 +185,14 @@ class MainActivity : AppCompatActivity() {
             val myBinder: PuppiBLEService.LocalBinder = service as PuppiBLEService.LocalBinder
             bleService = myBinder.service
             Log.i("BleBinderStatus", "Ble service bound")
+            bleService.registerCallBack(this@MainActivity)
             serviceBound = true
         }
+    }
+
+    override fun getResult(result: Int) {
+        TODO("Not yet implemented")
+        // result is the value received from BLE
+        // this function gets called every time the value is sent
     }
 }
