@@ -20,6 +20,16 @@ import androidx.core.content.ContextCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 
 
+//import android.animation.Animator
+import android.os.Handler
+import android.view.View
+import android.view.animation.Animation
+import android.view.animation.AnimationUtils
+//mrbit?
+//import kotlinx.android.synthetic.main.activity_main.*
+
+
+
 private const val ENABLE_BLUETOOTH_REQUEST_CODE = 1
 private const val LOCATION_PERMISSION_REQUEST_CODE = 2
 
@@ -27,7 +37,7 @@ private const val LOCATION_PERMISSION_REQUEST_CODE = 2
 class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        this.supportActionBar?.hide();
+        this.supportActionBar?.hide()
         setContentView(R.layout.activity_main)
 
         Intent(this, PuppiBLEService::class.java).also { intent ->
@@ -58,8 +68,14 @@ class MainActivity : AppCompatActivity() {
         val historyButton = findViewById<FloatingActionButton>(R.id.historyButton)
 
         historyButton.setOnClickListener {
+            val animation = AnimationUtils.loadAnimation(this, R.anim.lefttoright)
+            historyButton.startAnimation(animation)
+
             val intent = Intent(this, HistoryActivity::class.java)
             startActivity(intent)
+
+
+
         }
     }
 
