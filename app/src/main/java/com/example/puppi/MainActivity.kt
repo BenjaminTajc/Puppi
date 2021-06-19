@@ -40,9 +40,13 @@ class MainActivity : AppCompatActivity() {
         this.supportActionBar?.hide()
         setContentView(R.layout.activity_main)
 
+        Intent(this, PuppiDBService::class.java).also { intent ->
+            startService(intent)
+        }
         Intent(this, PuppiBLEService::class.java).also { intent ->
             startService(intent)
         }
+
         requestLocationPermission()
         promptEnableBluetooth()
 

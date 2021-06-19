@@ -7,8 +7,10 @@ import android.bluetooth.le.ScanCallback
 import android.bluetooth.le.ScanFilter
 import android.bluetooth.le.ScanResult
 import android.bluetooth.le.ScanSettings
+import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.content.ServiceConnection
 import android.content.pm.PackageManager
 import android.os.*
 import android.util.Log
@@ -44,6 +46,10 @@ class PuppiBLEService : Service() {
     private val scanResults = mutableListOf<ScanResult>()
 
     var bluetoothGatt: BluetoothGatt? = null
+
+    private lateinit var dbService: PuppiDBService
+
+    var dbServiceBound: Boolean = false
 
     @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
     val filter: ScanFilter = ScanFilter.Builder().setDeviceName(
@@ -142,11 +148,15 @@ class PuppiBLEService : Service() {
             }
         }
 
+        @RequiresApi(Build.VERSION_CODES.O)
         override fun onCharacteristicChanged(gatt: BluetoothGatt, characteristic: BluetoothGattCharacteristic) {
             with(characteristic) {
                 val byteArray = value
                 Log.i("BluetoothGattCallback", "Read characteristic $uuid:\n${value.toHexString()}")
-                var result = byteArray.first().toInt()
+                val result = byteArray.first().toInt()
+                if(dbServiceBound){
+                    dbService.saveEvent(result)
+                }
             }
         }
     }
@@ -178,6 +188,8 @@ class PuppiBLEService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i("BLEService", "BLE service started")
+        val srvIntent = Intent(this, PuppiDBService::class.java)
+        bindService(srvIntent, mServiceConnection, BIND_AUTO_CREATE)
         return super.onStartCommand(intent, flags, startId)
     }
 
@@ -200,6 +212,20 @@ class PuppiBLEService : Service() {
 
         if(isConnected){
             disconnect()
+        }
+    }
+
+    private val mServiceConnection: ServiceConnection = object : ServiceConnection {
+        override fun onServiceDisconnected(name: ComponentName) {
+            Log.i("dbBinderStatus", "DB service unbound")
+            dbServiceBound = false
+        }
+
+        override fun onServiceConnected(name: ComponentName, service: IBinder) {
+            val myBinder: PuppiDBService.LocalBinder = service as PuppiDBService.LocalBinder
+            dbService = myBinder.service
+            Log.i("dbBinderStatus", "DB service bound")
+            dbServiceBound = true
         }
     }
 }
