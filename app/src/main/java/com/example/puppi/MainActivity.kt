@@ -11,16 +11,22 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.media.Image
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
+import android.view.animation.Animation
 import android.view.animation.AnimationUtils
+import android.widget.FrameLayout
+import android.widget.ImageView
+import android.widget.ViewSwitcher
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
+import kotlinx.android.synthetic.main.activity_main.*
 
 //mrbit?
 //import kotlinx.android.synthetic.main.activity_main.*
@@ -32,6 +38,10 @@ private const val LOCATION_PERMISSION_REQUEST_CODE = 2
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
+
+    val images = arrayOf(R.drawable.doge_smile, R.drawable.doge_blink, R.drawable.doge_wink, R.drawable.doge_woof, R.drawable.doge_angery, R.drawable.doge_sad)
+    var imgCounter: Int = 0; //;
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         this.supportActionBar?.hide()
@@ -78,6 +88,45 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
 
 
         }
+
+        setForSwitching()
+        tempButton.setOnClickListener{
+            imgCounter.inc()
+            Log.i("ImgCounter", "Counter incremented")
+            if(imgCounter == images.size){
+                imgCounter = 0
+            }
+            val imageForChange = images[imgCounter]
+            imageSwitcher.setImageResource(imageForChange)
+        }
+
+    }
+
+    fun setForSwitching(){
+        setFactory()
+        setAnimations()
+    }
+
+    fun setFactory(){
+        imageSwitcher.setFactory(ViewSwitcher.ViewFactory { getImageView() })
+    }
+
+    fun getImageView():ImageView{
+        val imageView = ImageView(this)
+        imageView.layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+        imageView.scaleType = ImageView.ScaleType.FIT_XY
+        imageView.setImageResource(R.drawable.doge_smile)
+        return imageView
+    }
+
+    fun setAnimations(){
+        val animOut = AnimationUtils.loadAnimation(this, android.R.anim.fade_out)
+        val animIn = AnimationUtils.loadAnimation(this, android.R.anim.fade_in)
+
+
+        imageSwitcher.outAnimation = animOut
+        imageSwitcher.inAnimation = animIn
+
     }
 
     private lateinit var bleService: PuppiBLEService
