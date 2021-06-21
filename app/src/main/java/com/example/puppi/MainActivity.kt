@@ -39,8 +39,8 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
 
     private val images = arrayOf(R.drawable.doge_smile, R.drawable.doge_blink, R.drawable.doge_wink, R.drawable.doge_woof, R.drawable.doge_angery, R.drawable.doge_sad)
     private var imgCounter: Int = 0
-
-    var rezultat = 0
+    private var resCurrent: Int = 0
+    //var rezultat = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -108,7 +108,7 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
             var neki = images[0]
             var blinkBool = false
             while(true){
-                when(rezultat) {
+                when(resCurrent) {
 
                     //noise
                     0 -> blinkBool = true
@@ -293,7 +293,7 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
         }
     }
 
-    private var resCurrent: Int = 0
+
 
     override fun getResult(result: Int) {
         // result is the value received from BLE
