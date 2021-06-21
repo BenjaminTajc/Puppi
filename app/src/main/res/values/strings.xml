@@ -11,4 +11,5 @@
     <string name="hello_first_fragment">Hello first fragment</string>
     <string name="hello_second_fragment">Hello second fragment. Arg: %1$s</string>
     <string name="history_button">History button</string>
+    <string name="history_empty">No items to show yet</string>
 </resources>

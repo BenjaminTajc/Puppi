@@ -85,7 +85,7 @@ class PuppiBLEService : Service() {
 
     fun startBleScan() {
         Log.i("BleServiceScan", "Ble scan called")
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M && !isLocationPermissionGranted) {
+        if (!isLocationPermissionGranted) {
             Log.i(
                 "BleServiceScan",
                 "Ble scan start unsuccessful, isLocationPermissionGranted: $isLocationPermissionGranted"
