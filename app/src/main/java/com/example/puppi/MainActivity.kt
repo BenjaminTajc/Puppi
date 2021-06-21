@@ -24,6 +24,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import kotlinx.android.synthetic.main.activity_main.*
+import kotlin.concurrent.thread
 
 //mrbit?
 //import kotlinx.android.synthetic.main.activity_main.*
@@ -38,6 +39,8 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
 
     private val images = arrayOf(R.drawable.doge_smile, R.drawable.doge_blink, R.drawable.doge_wink, R.drawable.doge_woof, R.drawable.doge_angery, R.drawable.doge_sad)
     private var imgCounter: Int = 0
+
+    var rezultat = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -85,7 +88,7 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
         }
 
         setForSwitching()
-        tempButton.setOnClickListener{
+        """tempButton.setOnClickListener{
             imgCounter++
 
             if(imgCounter == images.size){
@@ -94,7 +97,43 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
             Log.i("ImgCounter", "Counter incremented. Value: $imgCounter")
             val imageForChange = images[imgCounter]
             imageSwitcher.setImageResource(imageForChange)
+        }"""
+
+        //result = 1,2,3 oz. result = getResult()
+
+
+
+        thread(start = true) {
+            var kaunter = 0
+            Log.i("cyka", "blyat")
+            while(true){
+               """ when(rezultat) {
+
+                    //bark
+                    0 -> //images[3] doge_smile, R.drawable.doge_blink, R.drawable.doge_wink, R.drawable.doge_woof, R.drawable.doge_angery, R.drawable.doge_sad)
+                    //growl
+                    1 -> //images[4]
+                    //noise
+                    2 ->  //do nothing
+                    //whine
+                    3 -> //images[5]
+                    else -> {  Log.i("BleResult", "Value not in range [0, 3]") }
+                }"""
+
+                kaunter = (kaunter + 1)%2
+                Log.i("vajl", "tru")
+                imageSwitcher.post({
+                    imageSwitcher.setImageResource(images[kaunter])
+                })
+
+                if(kaunter == 0){ Thread.sleep(2000)
+                }else{
+                    Thread.sleep(400)
+                }
+
+            }
         }
+
 
     }
 
@@ -240,5 +279,18 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
         // result is the value received from BLE
         // this function gets called every time the value is sent
         resCurrent = result
+
+        when(result) {
+
+            //bark
+            0 -> print(result)
+            //growl
+            1 -> print(result)
+            //noise
+            2 -> print(result)
+            //whine
+            3 -> print(result)
+            else -> {  Log.i("BleResult", "Value not in range [0, 3]") }
+        }
     }
 }
