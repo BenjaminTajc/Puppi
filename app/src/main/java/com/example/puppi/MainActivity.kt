@@ -11,16 +11,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
-import android.media.Image
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
 import android.util.Log
-import android.view.animation.Animation
 import android.view.animation.AnimationUtils
 import android.widget.FrameLayout
 import android.widget.ImageView
-import android.widget.ViewSwitcher
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -39,8 +36,8 @@ private const val LOCATION_PERMISSION_REQUEST_CODE = 2
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
 class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
 
-    val images = arrayOf(R.drawable.doge_smile, R.drawable.doge_blink, R.drawable.doge_wink, R.drawable.doge_woof, R.drawable.doge_angery, R.drawable.doge_sad)
-    var imgCounter: Int = 0; //;
+    private val images = arrayOf(R.drawable.doge_smile, R.drawable.doge_blink, R.drawable.doge_wink, R.drawable.doge_woof, R.drawable.doge_angery, R.drawable.doge_sad)
+    private var imgCounter: Int = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -63,6 +60,7 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
             if(serviceBound) {
                 Log.i("ScanButtonStatus", "Scan button pressed")
                 if(!bleService.isConnected){
+                    Log.i("ScanButtonStatus", "Not connected to device")
                     if(!bleService.isScanning){
                         Log.i("ScanButtonStatus", "Calling Ble scan")
                         bleService.startBleScan()
@@ -84,34 +82,32 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
 
             val intent = Intent(this, HistoryActivity::class.java)
             startActivity(intent)
-
-
-
         }
 
         setForSwitching()
         tempButton.setOnClickListener{
-            imgCounter.inc()
-            Log.i("ImgCounter", "Counter incremented")
+            imgCounter++
+
             if(imgCounter == images.size){
                 imgCounter = 0
             }
+            Log.i("ImgCounter", "Counter incremented. Value: $imgCounter")
             val imageForChange = images[imgCounter]
             imageSwitcher.setImageResource(imageForChange)
         }
 
     }
 
-    fun setForSwitching(){
+    private fun setForSwitching(){
         setFactory()
         setAnimations()
     }
 
-    fun setFactory(){
-        imageSwitcher.setFactory(ViewSwitcher.ViewFactory { getImageView() })
+    private fun setFactory(){
+        imageSwitcher.setFactory { getImageView() }
     }
 
-    fun getImageView():ImageView{
+    private fun getImageView():ImageView{
         val imageView = ImageView(this)
         imageView.layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
         imageView.scaleType = ImageView.ScaleType.FIT_XY
@@ -119,7 +115,7 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
         return imageView
     }
 
-    fun setAnimations(){
+    private fun setAnimations(){
         val animOut = AnimationUtils.loadAnimation(this, android.R.anim.fade_out)
         val animIn = AnimationUtils.loadAnimation(this, android.R.anim.fade_in)
 
@@ -145,7 +141,6 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
     override fun onStart() {
         super.onStart()
         val intent = Intent(this, PuppiBLEService::class.java)
-        //startService(intent)
         bindService(intent, mServiceConnection, BIND_AUTO_CREATE)
     }
 
@@ -239,9 +234,11 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
         }
     }
 
+    private var resCurrent: Int = 0
+
     override fun getResult(result: Int) {
-        TODO("Not yet implemented")
         // result is the value received from BLE
         // this function gets called every time the value is sent
+        resCurrent = result
     }
 }

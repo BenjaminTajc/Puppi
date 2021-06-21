@@ -9,9 +9,10 @@ import android.os.IBinder
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.room.*
+import com.jakewharton.threetenabp.AndroidThreeTen
 import kotlinx.coroutines.*
-import java.time.OffsetDateTime
-import java.time.format.DateTimeFormatter
+import org.threeten.bp.OffsetDateTime
+import org.threeten.bp.format.DateTimeFormatter
 import java.util.*
 
 
@@ -20,6 +21,7 @@ class PuppiDBService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         Log.i("dbService", "DB service started")
         db = EventDatabase(this)
+        AndroidThreeTen.init(this)
         return super.onStartCommand(intent, flags, startId)
     }
 

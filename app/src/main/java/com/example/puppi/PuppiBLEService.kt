@@ -16,7 +16,12 @@ import android.os.*
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
 import java.util.*
+import kotlin.concurrent.timerTask
 
 
 @RequiresApi(Build.VERSION_CODES.LOLLIPOP)
@@ -54,6 +59,8 @@ class PuppiBLEService : Service() {
     var activityBound: Boolean = false
 
     private var liveCallback: LiveCallBack? = null
+
+    private var notifWorking: Boolean = false
 
     interface LiveCallBack {
         fun getResult(result: Int)
@@ -124,8 +131,16 @@ class PuppiBLEService : Service() {
     }
 
     fun disconnect(){
+        if(this::job.isInitialized){
+            if(job.isActive){
+                job.cancel()
+            }
+        }
         bluetoothGatt?.disconnect()
+        isConnected = false
     }
+
+    private var valPrevious: Int? = 0
 
     private val gattCallback = object: BluetoothGattCallback() {
         override fun onConnectionStateChange(gatt: BluetoothGatt?, status: Int, newState: Int) {
@@ -140,7 +155,6 @@ class PuppiBLEService : Service() {
                     Handler(Looper.getMainLooper()).post {
                         bluetoothGatt?.discoverServices()
                     }
-                    setNotify()
                 } else if (newState == BluetoothProfile.STATE_DISCONNECTED) {
                     Log.w("BluetoothGattCallback", "Successfully disconnected from $deviceAddress")
                     gatt?.close()
@@ -163,7 +177,9 @@ class PuppiBLEService : Service() {
                     "Discovered ${services.size} services for ${device.address}"
                 )
                 printGattTable()
+
             }
+            setNotify(gatt)
         }
 
         @RequiresApi(Build.VERSION_CODES.O)
@@ -171,21 +187,87 @@ class PuppiBLEService : Service() {
             gatt: BluetoothGatt,
             characteristic: BluetoothGattCharacteristic
         ) {
+            if(!notifWorking){
+                notifWorking = true
+            }
             with(characteristic) {
-                val byteArray = value
-                Log.i("BluetoothGattCallback", "Read characteristic $uuid:\n${value.toHexString()}")
-                val result = byteArray.first().toInt()
-                if(activityBound){
-                    liveCallback?.getResult(result)
+                processResult(this.value.first().toInt())
+            }
+        }
+
+        @RequiresApi(Build.VERSION_CODES.O)
+        override fun onCharacteristicRead(
+            gatt: BluetoothGatt?,
+            characteristic: BluetoothGattCharacteristic?,
+            status: Int
+        ) {
+            super.onCharacteristicRead(gatt, characteristic, status)
+            if(status == BluetoothGatt.GATT_SUCCESS) {
+                with(characteristic){
+                    val result = this?.value?.first()?.toInt()
+                    Log.i("BLEService", "Characteristic read value: $result, prev: $valPrevious, raw: ${this?.value?.toHexString()}")
+                    if(valPrevious != result){
+                        processResult(result)
+                    }
+                    valPrevious = result
                 }
-                if(dbServiceBound){
+            }
+        }
+
+        override fun onDescriptorWrite(
+            gatt: BluetoothGatt?,
+            descriptor: BluetoothGattDescriptor?,
+            status: Int
+        ) {
+            super.onDescriptorWrite(gatt, descriptor, status)
+            if(status == BluetoothGatt.GATT_SUCCESS){
+                Log.i("BLEService", "Descriptor written successfully. Waiting for callback")
+            } else {
+                Log.e("BLEService", "Writing to descriptor failed")
+            }
+            checkNotif()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun processResult(result: Int?) {
+        Log.i("BluetoothGattCallback", "Read characteristic value: $result")
+        if(activityBound){
+            if (result != null) {
+                liveCallback?.getResult(result)
+            }
+        }
+        if(dbServiceBound){
+            if(result != 0){
+                if (result != null) {
                     dbService.saveEvent(result)
                 }
             }
         }
     }
 
-    fun ByteArray.toHexString(): String =
+    private lateinit var job: Job
+
+    private fun checkNotif() {
+        Timer().schedule(timerTask {
+            Log.i("BLEService", "Checking notif: $notifWorking")
+            if(!notifWorking) {
+                Log.i("BLEService", "Notif not working")
+                val btLevelChar = bluetoothGatt?.getService(BATTERY_SERVICE)
+                    ?.getCharacteristic(BATTERY_CHAR)
+                job = GlobalScope.launch(Dispatchers.Default) {
+                    while (job.isActive){
+                        Log.i("BLEService", "Loop initiated")
+                        Timer().schedule(timerTask {
+                            bluetoothGatt?.readCharacteristic(btLevelChar)
+                        }, 250)
+                    }
+                }
+            }
+        }, 2000)
+    }
+
+    private fun ByteArray.toHexString(): String =
             joinToString(separator = " ", prefix = "0x") { String.format("%02X", it) }
 
     private fun BluetoothGatt.printGattTable() {
@@ -208,11 +290,23 @@ class PuppiBLEService : Service() {
         }
     }
 
-    private fun setNotify() {
-        val characteristic: BluetoothGattCharacteristic = bluetoothGatt?.getService(BATTERY_SERVICE)!!.getCharacteristic(
-            BATTERY_CHAR
-        )
-        bluetoothGatt?.setCharacteristicNotification(characteristic, true)
+    private fun setNotify(gatt: BluetoothGatt) {
+        val characteristic: BluetoothGattCharacteristic =
+            gatt.
+            getService(BATTERY_SERVICE)!!.
+            getCharacteristic(BATTERY_CHAR)
+        if (bluetoothGatt?.setCharacteristicNotification(characteristic, true) == true) {
+            val descriptor = characteristic.getDescriptor(UUID.fromString("00002902-0000-1000-8000-00805f9b34fb"))
+            descriptor.value = BluetoothGattDescriptor.ENABLE_INDICATION_VALUE
+            descriptor.value = BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE
+            if(bluetoothGatt?.writeDescriptor(descriptor) == true){
+                Log.i("BLEService", "Writing to descriptor")
+            } else {
+                Log.e("BLEService", "Characteristic notifications enabling failed")
+            }
+        } else {
+            Log.e("BLEService", "Characteristic notifications enabling failed")
+        }
     }
 
 
