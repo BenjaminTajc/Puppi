@@ -105,30 +105,50 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
 
         thread(start = true) {
             var kaunter = 0
-            Log.i("cyka", "blyat")
+            var neki = images[0]
+            var blinkBool = false
             while(true){
-               """ when(rezultat) {
+                when(rezultat) {
 
-                    //bark
-                    0 -> //images[3] doge_smile, R.drawable.doge_blink, R.drawable.doge_wink, R.drawable.doge_woof, R.drawable.doge_angery, R.drawable.doge_sad)
-                    //growl
-                    1 -> //images[4]
                     //noise
-                    2 ->  //do nothing
+                    0 -> blinkBool = true
+                    //bark
+                    1 ->{
+                        neki = images[3]
+                        blinkBool = false
+                    }
                     //whine
-                    3 -> //images[5]
+                    2 ->{
+                        neki = images[5]
+                        blinkBool = false
+                    }
+                    //growl
+                    3 ->{
+                        neki = images[4]
+                        blinkBool = false
+                    }
+
                     else -> {  Log.i("BleResult", "Value not in range [0, 3]") }
-                }"""
+                }
 
                 kaunter = (kaunter + 1)%2
                 Log.i("vajl", "tru")
+
+                if(blinkBool){
+                    neki = images[kaunter]
+                }
                 imageSwitcher.post({
-                    imageSwitcher.setImageResource(images[kaunter])
+                    imageSwitcher.setImageResource(neki)
                 })
 
-                if(kaunter == 0){ Thread.sleep(2000)
+                if(blinkBool) {
+                    if (kaunter == 0) {
+                        Thread.sleep(800)
+                    } else if (kaunter == 1) {
+                        Thread.sleep(100)
+                    }
                 }else{
-                    Thread.sleep(400)
+                    Thread.sleep(3000)
                 }
 
             }
@@ -280,17 +300,6 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
         // this function gets called every time the value is sent
         resCurrent = result
 
-        when(result) {
 
-            //bark
-            0 -> print(result)
-            //growl
-            1 -> print(result)
-            //noise
-            2 -> print(result)
-            //whine
-            3 -> print(result)
-            else -> {  Log.i("BleResult", "Value not in range [0, 3]") }
-        }
     }
 }
