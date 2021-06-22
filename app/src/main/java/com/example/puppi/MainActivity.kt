@@ -40,7 +40,7 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
     private val images = arrayOf(R.drawable.doge_smile, R.drawable.doge_blink, R.drawable.doge_wink, R.drawable.doge_woof, R.drawable.doge_angery, R.drawable.doge_sad)
     private var imgCounter: Int = 0
 
-    var rezultat = 0
+    private var resCurrent = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -108,7 +108,7 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
             var neki = images[0]
             var blinkBool = false
             while(true){
-                when(rezultat) {
+                when(resCurrent) {
 
                     //noise
                     0 -> blinkBool = true
@@ -117,16 +117,17 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
                         neki = images[3]
                         blinkBool = false
                     }
-                    //whine
-                    2 ->{
-                        neki = images[5]
-                        blinkBool = false
-                    }
                     //growl
-                    3 ->{
+                    2 ->{
                         neki = images[4]
                         blinkBool = false
                     }
+                    //whine
+                    3 ->{
+                        neki = images[5]
+                        blinkBool = false
+                    }
+
 
                     else -> {  Log.i("BleResult", "Value not in range [0, 3]") }
                 }
@@ -292,8 +293,6 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
             serviceBound = true
         }
     }
-
-    private var resCurrent: Int = 0
 
     override fun getResult(result: Int) {
         // result is the value received from BLE
