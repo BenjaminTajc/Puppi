@@ -11,6 +11,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.os.IBinder
@@ -41,7 +42,7 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
     private val news = arrayOf(R.drawable.woof, R.drawable.grrr, R.drawable.sad_speech_bubble, R.drawable.null_image)
     private var imgCounter: Int = 0
     private var resCurrent: Int = 0
-    //var rezultat = 0
+    private var buttonClicque = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -59,49 +60,57 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
         promptEnableBluetooth()
 
         val bleButton = findViewById<FloatingActionButton>(R.id.bleButton)
-
+        val animationBle = AnimationUtils.loadAnimation(this, R.anim.rotate)
         bleButton.setOnClickListener {
             if(serviceBound) {
                 Log.i("ScanButtonStatus", "Scan button pressed")
+                bleButton.setBackgroundColor(Color.parseColor("#FF03F423"))
+                bleButton.startAnimation(animationBle)
+                buttonClicque = true
                 if(!bleService.isConnected){
+                    //bleButton.setBackgroundColor(Color.parseColor("#03A9F4"))
+
                     Log.i("ScanButtonStatus", "Not connected to device")
+
                     if(!bleService.isScanning){
                         Log.i("ScanButtonStatus", "Calling Ble scan")
+                        //
                         bleService.startBleScan()
                     } else {
                         Log.i("ScanButtonStatus", "Stopping Ble scan")
+
                         bleService.stopBleScan()
+
                     }
+
+                    bleButton.setBackgroundColor(Color.parseColor("#FF03F423"))
                 } else {
                     bleService.disconnect()
+                    //bleButton.clearAnimation()
+                    bleButton.setBackgroundColor(Color.parseColor("#03A9F4"))
+
+
                 }
             }
         }
 
+
         val historyButton = findViewById<FloatingActionButton>(R.id.historyButton)
 
         historyButton.setOnClickListener {
-            val animation = AnimationUtils.loadAnimation(this, R.anim.lefttoright)
+            val animation = AnimationUtils.loadAnimation(this, R.anim.righttoleft)
             historyButton.startAnimation(animation)
+
 
             val intent = Intent(this, HistoryActivity::class.java)
             startActivity(intent)
+
         }
 
         setForSwitching()
         textForSwitching()
-        """tempButton.setOnClickListener{
-            imgCounter++
 
-            if(imgCounter == images.size){
-                imgCounter = 0
-            }
-            Log.i("ImgCounter", "Counter incremented. Value: $imgCounter")
-            val imageForChange = images[imgCounter]
-            imageSwitcher.setImageResource(imageForChange)
-        }"""
 
-        //result = 1,2,3 oz. result = getResult()
 
 
 
@@ -252,6 +261,7 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
             bleService.registerCallBack(null)
             unbindService(mServiceConnection)
             serviceBound = false
+            buttonClicque = false
         }
     }
 

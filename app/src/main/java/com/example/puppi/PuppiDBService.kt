@@ -40,7 +40,7 @@ class PuppiDBService : Service() {
         Log.i("dbService", "DB service started")
         db = EventDatabase(this)
         AndroidThreeTen.init(this)
-        //prePopulate()
+        prePopulate()
         return super.onStartCommand(intent, flags, startId)
     }
 
