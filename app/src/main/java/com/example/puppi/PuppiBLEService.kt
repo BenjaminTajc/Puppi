@@ -257,10 +257,10 @@ class PuppiBLEService : Service() {
                     ?.getCharacteristic(BATTERY_CHAR)
                 job = GlobalScope.launch(Dispatchers.Default) {
                     while (job.isActive){
-                        Log.i("BLEService", "Loop initiated")
+                        //Log.i("BLEService", "Loop initiated")
                         Timer().schedule(timerTask {
                             bluetoothGatt?.readCharacteristic(btLevelChar)
-                        }, 250)
+                        }, 300)
                     }
                 }
             }

@@ -14,16 +14,13 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.ProgressBar
 import android.widget.TextView
-import androidx.annotation.UiThread
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.async
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.threeten.bp.OffsetDateTime
-import java.io.Serializable
+import org.w3c.dom.Text
 
 
 class BroadHistoryFragment : Fragment() {
@@ -52,7 +49,7 @@ class BroadHistoryFragment : Fragment() {
         recyclerView = getView()?.findViewById(R.id.recyclerView)
         initAdapter()
 
-        initScrollListener()
+        //initScrollListener()
         activity?.bindService(srvIntent, mServiceConnection, Service.BIND_AUTO_CREATE)
     }
 
@@ -81,7 +78,7 @@ class BroadHistoryFragment : Fragment() {
         runBlocking {
             val job = async { getData() }
             runBlocking {
-                array = adaptData(job.await())
+                array = adaptData(job.await().reversed())
             }
         }
         return array
@@ -125,6 +122,7 @@ class BroadHistoryFragment : Fragment() {
                     }
                 }
             }
+            array?.add(temp)
             return array
         } else {
             Log.i("dbService", "Finished ten days query: no results")
@@ -137,7 +135,7 @@ class BroadHistoryFragment : Fragment() {
         recyclerView!!.adapter = recyclerViewAdapter
     }
 
-    private fun initScrollListener() {
+    /*private fun initScrollListener() {
         recyclerView!!.addOnScrollListener(object : RecyclerView.OnScrollListener() {
             override fun onScrollStateChanged(recyclerView: RecyclerView, newState: Int) {
                 super.onScrollStateChanged(recyclerView, newState)
@@ -176,7 +174,7 @@ class BroadHistoryFragment : Fragment() {
             }, 2000)
         }
 
-    }
+    }*/
 }
 
 
@@ -199,7 +197,7 @@ class RecyclerViewAdapter(itemList: ArrayList<DaySum?>?) : RecyclerView.Adapter<
         return when (viewType) {
             VIEW_TYPE_ITEM -> {
                 val view: View =
-                    LayoutInflater.from(parent.context).inflate(R.layout.item_row, parent, false)
+                    LayoutInflater.from(parent.context).inflate(R.layout.item_row_broad, parent, false)
                 ItemViewHolder(view)
             }
             VIEW_TYPE_LOADING -> {
@@ -243,7 +241,10 @@ class RecyclerViewAdapter(itemList: ArrayList<DaySum?>?) : RecyclerView.Adapter<
     }
 
     private class ItemViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        var tvItem: TextView = itemView.findViewById(R.id.tvItem)
+        var dateView: TextView = itemView.findViewById(R.id.date)
+        var red: TextView = itemView.findViewById(R.id.r)
+        var green: TextView = itemView.findViewById(R.id.g)
+        var blue: TextView = itemView.findViewById(R.id.b)
     }
 
 
@@ -253,7 +254,7 @@ class RecyclerViewAdapter(itemList: ArrayList<DaySum?>?) : RecyclerView.Adapter<
     }
 
     private class EmptyViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
-        var tvItem: TextView = itemView.findViewById(R.id.tvItem)
+        var tvItem: TextView = itemView.findViewById(R.id.date)
     }
 
     private fun showLoadingView(viewHolder: LoadingViewHolder, position: Int) {
@@ -262,7 +263,10 @@ class RecyclerViewAdapter(itemList: ArrayList<DaySum?>?) : RecyclerView.Adapter<
 
     private fun populateItemRows(viewHolder: ItemViewHolder, position: Int) {
         val item: DaySum = mItemList?.get(position) ?: DaySum(OffsetDateTime.now(), 0, 0, 0)
-        viewHolder.tvItem.text = "${item.date?.dayOfWeek?.name}, ${item.date?.dayOfMonth}.${item.date?.monthValue}"
+        viewHolder.dateView.text = "${item.date?.dayOfWeek?.name}, ${item.date?.dayOfMonth}.${item.date?.monthValue}:"
+        viewHolder.red.text = "${item.r} BARKS"
+        viewHolder.green.text = "${item.g} GROWLS"
+        viewHolder.blue.text = "${item.b} WHINES"
     }
 }
 

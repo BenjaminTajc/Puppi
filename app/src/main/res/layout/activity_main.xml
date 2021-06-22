@@ -15,22 +15,22 @@
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/frameLayout"
-        app:layout_constraintVertical_bias="0.276" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.775" />
 
     <FrameLayout
         android:id="@+id/frameLayout"
         android:layout_width="343dp"
         android:layout_height="349dp"
-        android:layout_marginTop="168dp"
+        app:layout_constraintBottom_toTopOf="@+id/divider"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent">
+        app:layout_constraintTop_toBottomOf="@+id/imageView">
 
         <ImageSwitcher
             android:id="@+id/imageSwitcher"
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
+            android:layout_height="347dp">
 
 
         </ImageSwitcher>
@@ -71,27 +71,14 @@
 
     <ImageView
         android:id="@+id/imageView"
-        android:layout_width="135dp"
-        android:layout_height="130dp"
+        android:layout_width="127dp"
+        android:layout_height="95dp"
         android:layout_marginTop="16dp"
         android:contentDescription="@string/puppi_logo"
-        app:layout_constraintBottom_toTopOf="@+id/frameLayout"
+        android:fadingEdge="horizontal|vertical"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.292"
         app:srcCompat="@mipmap/ic_puppi_logo" />
-
-    <Button
-        android:id="@+id/tempButton"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Temp button"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.486"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.773" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

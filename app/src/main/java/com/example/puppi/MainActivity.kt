@@ -342,7 +342,5 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
         // result is the value received from BLE
         // this function gets called every time the value is sent
         resCurrent = result
-
-
     }
 }
