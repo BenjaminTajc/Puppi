@@ -22,7 +22,11 @@ class HistoryActivity : AppCompatActivity() {
         setPagerAdapter()
 
         TabLayoutMediator(tabLayout, viewPager) { tab, position ->
-            tab.text = (position+1).toString()
+            if(position == 0){
+                tab.text = "By day"
+            } else if(position == 1){
+                tab.text = "By event"
+            }
         }.attach()
     }
 

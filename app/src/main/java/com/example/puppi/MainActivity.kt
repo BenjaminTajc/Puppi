@@ -11,6 +11,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
@@ -61,37 +62,34 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
 
         val bleButton = findViewById<FloatingActionButton>(R.id.bleButton)
         val animationBle = AnimationUtils.loadAnimation(this, R.anim.rotate)
-        val colorBle = AnimationUtils.loadAnimation(this, R.anim.changeColor)
         bleButton.setOnClickListener {
             if(serviceBound) {
                 Log.i("ScanButtonStatus", "Scan button pressed")
                 bleButton.background//(Color.parseColor("#FF03F423"))
-                bleButton.setRippleColor(Color.parseColor("#FF03F423"))
+                bleButton.rippleColor = Color.parseColor("#FF03F423")
                 bleButton.startAnimation(animationBle)
                 buttonClicque = true
                 if(!bleService.isConnected){
                     //bleButton.setBackgroundColor(Color.parseColor("#03A9F4"))
-
                     Log.i("ScanButtonStatus", "Not connected to device")
-
                     if(!bleService.isScanning){
                         Log.i("ScanButtonStatus", "Calling Ble scan")
-                        //
                         bleService.startBleScan()
+                        bleButton.setBackgroundColor(Color.parseColor("#FF03F423"))
+                        bleButton.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#FF03F423"))
                     } else {
                         Log.i("ScanButtonStatus", "Stopping Ble scan")
-
                         bleService.stopBleScan()
-
+                        bleButton.clearAnimation()
+                        bleButton.setBackgroundColor(Color.parseColor("#03A9F4"))
+                        bleButton.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#03A9F4"))
                     }
 
-                    bleButton.setBackgroundColor(Color.parseColor("#FF03F423"))
                 } else {
                     bleService.disconnect()
-                    //bleButton.clearAnimation()
+                    bleButton.clearAnimation()
                     bleButton.setBackgroundColor(Color.parseColor("#03A9F4"))
-
-
+                    bleButton.backgroundTintList = ColorStateList.valueOf(Color.parseColor("#03A9F4"))
                 }
             }
         }
@@ -111,10 +109,6 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
 
         setForSwitching()
         textForSwitching()
-
-
-
-
 
         thread(start = true) {
             var kaunter = 0
@@ -153,18 +147,18 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
                 }
 
                 kaunter = (kaunter + 1)%2
-                Log.i("vajl", "tru")
+                //Log.i("vajl", "tru")
 
                 if(blinkBool){
                     neki = images[kaunter]
                 }
-                imageSwitcher.post({
+                imageSwitcher.post {
                     imageSwitcher.setImageResource(neki)
-                })
+                }
                 Thread.sleep(20)
-                bubbleTextSwitcher.post({
+                bubbleTextSwitcher.post {
                     bubbleTextSwitcher.setImageResource(novica)
-                })
+                }
 
                 if(blinkBool) {
                     if (kaunter == 0) {
@@ -175,11 +169,8 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
                 }else{
                     Thread.sleep(3000)
                 }
-
             }
         }
-
-
     }
 
     private fun textForSwitching(){
@@ -202,11 +193,8 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
     private fun textAnimations(){
         val animOut = AnimationUtils.loadAnimation(this, android.R.anim.fade_out)
         val animIn = AnimationUtils.loadAnimation(this, android.R.anim.fade_in)
-
-
         bubbleTextSwitcher.outAnimation = animOut
         bubbleTextSwitcher.inAnimation = animIn
-
     }
 
     //doge images below
@@ -264,6 +252,16 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
             unbindService(mServiceConnection)
             serviceBound = false
             buttonClicque = false
+        }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        if(bleService.isConnected) {
+            bleService.disconnect()
+        }
+        if(bleService.isScanning) {
+            bleService.stopBleScan()
         }
     }
 
@@ -353,6 +351,14 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
     override fun getResult(result: Int) {
         // result is the value received from BLE
         // this function gets called every time the value is sent
+        if (this::bleService.isInitialized) {
+            Log.i("BLEService", "Checking connection status")
+            if (bleService.isConnected) {
+                runOnUiThread() {
+                    bleButton.clearAnimation()
+                }
+            }
+        }
         resCurrent = result
     }
 }
