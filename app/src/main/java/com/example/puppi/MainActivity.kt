@@ -38,6 +38,7 @@ private const val LOCATION_PERMISSION_REQUEST_CODE = 2
 class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
 
     private val images = arrayOf(R.drawable.doge_smile, R.drawable.doge_blink, R.drawable.doge_wink, R.drawable.doge_woof, R.drawable.doge_angery, R.drawable.doge_sad)
+    private val news = arrayOf(R.drawable.woof, R.drawable.grrr, R.drawable.sad_speech_bubble, R.drawable.null_image)
     private var imgCounter: Int = 0
     private var resCurrent: Int = 0
     //var rezultat = 0
@@ -88,6 +89,7 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
         }
 
         setForSwitching()
+        textForSwitching()
         """tempButton.setOnClickListener{
             imgCounter++
 
@@ -106,25 +108,32 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
         thread(start = true) {
             var kaunter = 0
             var neki = images[0]
+            var novica = news[3]
             var blinkBool = false
             while(true){
                 when(resCurrent) {
 
                     //noise
-                    0 -> blinkBool = true
+                    0 ->{
+                        blinkBool = true
+                        novica = news[3]
+                    }
                     //bark
                     1 ->{
                         neki = images[3]
+                        novica = news[0]
                         blinkBool = false
                     }
                     //growl
                     2 ->{
                         neki = images[4]
+                        novica = news[1]
                         blinkBool = false
                     }
                     //whine
                     3 ->{
                         neki = images[5]
+                        novica = news[2]
                         blinkBool = false
                     }
 
@@ -140,6 +149,10 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
                 }
                 imageSwitcher.post({
                     imageSwitcher.setImageResource(neki)
+                })
+                Thread.sleep(20)
+                bubbleTextSwitcher.post({
+                    bubbleTextSwitcher.setImageResource(novica)
                 })
 
                 if(blinkBool) {
@@ -157,6 +170,35 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
 
 
     }
+
+    private fun textForSwitching(){
+        textFactory()
+        textAnimations()
+    }
+
+    private fun textFactory(){
+        bubbleTextSwitcher.setFactory{ textImageView() }
+    }
+
+    private fun textImageView():ImageView{
+        val imageView = ImageView(this)
+        imageView.layoutParams = FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT)
+        imageView.scaleType = ImageView.ScaleType.FIT_XY
+        imageView.setImageResource(R.drawable.doge_smile)
+        return imageView
+    }
+
+    private fun textAnimations(){
+        val animOut = AnimationUtils.loadAnimation(this, android.R.anim.fade_out)
+        val animIn = AnimationUtils.loadAnimation(this, android.R.anim.fade_in)
+
+
+        bubbleTextSwitcher.outAnimation = animOut
+        bubbleTextSwitcher.inAnimation = animIn
+
+    }
+
+    //doge images below
 
     private fun setForSwitching(){
         setFactory()
