@@ -61,10 +61,12 @@ class MainActivity : AppCompatActivity(), PuppiBLEService.LiveCallBack {
 
         val bleButton = findViewById<FloatingActionButton>(R.id.bleButton)
         val animationBle = AnimationUtils.loadAnimation(this, R.anim.rotate)
+        val colorBle = AnimationUtils.loadAnimation(this, R.anim.changeColor)
         bleButton.setOnClickListener {
             if(serviceBound) {
                 Log.i("ScanButtonStatus", "Scan button pressed")
-                bleButton.setBackgroundColor(Color.parseColor("#FF03F423"))
+                bleButton.background//(Color.parseColor("#FF03F423"))
+                bleButton.setRippleColor(Color.parseColor("#FF03F423"))
                 bleButton.startAnimation(animationBle)
                 buttonClicque = true
                 if(!bleService.isConnected){
